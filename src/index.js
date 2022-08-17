@@ -1,6 +1,8 @@
 //declariations
 let divMenu = document.querySelector('#ramen-menu');
 let divDetails = document.querySelector('#ramen-detail');
+let detailTrigger = true;
+let selectedRamen = 1;
 
 //initial fetch request
 fetch('http://localhost:3000/ramens')
@@ -15,6 +17,11 @@ function renderImg(ramen){
     img.onclick = displayDetails;
 
     divMenu.append(img);
+
+    if(detailTrigger === true){
+        detailTrigger = !detailTrigger;
+        renderDetails(ramen);
+    };
     
 }
 
@@ -25,6 +32,8 @@ function displayDetails(e){
 }
 
 function renderDetails(i){
+    selectedRamen = i.id;
+
     const img = document.querySelector('.detail-image');
     img.src = i.image;
  
@@ -50,9 +59,44 @@ function addRamen(e){
         rating: e.target.rating.value,
         comment: e.target['new-comment'].value
     };
-    renderImg(ramenObj);
-    renderDetails(ramenObj);
-    console.log(e.target['new-comment'].value);
+    console.log(ramenObj);
+    fetch('http://localhost:3000/ramens', {
+        method: 'POST',
+        header: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(ramenObj)
+    })
+    .then(res => res.json())
+    .then(data => {
+        renderImg(ramenObj);
+        renderDetails(ramenObj);
+    });
+}
+
+function editRamen(e){
+    e.preventDefault();
+    const update = {
+        rating: e.target.rating.value,
+        comment: e.target['new-comment'].value
+    };
+
+    fetch(`http://localhost:3000/ramens/${selectedRamen}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept':'application/json'
+        },
+        body: JSON.stringify(update)
+    })
+    .then(res => res.json())
+    .then(data => {
+        renderDetails(data);
+    });
+    // console.log(e.target.id.value);
+    // console.log(e.target['new-comment'].value);
 }
 
 document.querySelector('#new-ramen').addEventListener('submit', addRamen);
+document.querySelector('#edit-ramen').addEventListener('submit', editRamen);
