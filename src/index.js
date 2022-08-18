@@ -5,14 +5,18 @@
 const ramenMenu = document.querySelector('#ramen-menu');
 let ramenData = [];
 let detailTrigger = true;
+let activeId = 1;
+fetchRamen();
 
-fetch('http://localhost:3000/ramens')
-.then(res => res.json())
-.then(data => {
+function fetchRamen(){
+    fetch('http://localhost:3000/ramens')
+    .then(res => res.json())
+    .then(data => {
     ramenData = data;
     data.forEach(addRamen);
     
-});
+    });
+}
 
 function addRamen(ramen){
     const menuImg = document.createElement('img');
@@ -38,7 +42,7 @@ ramenMenu.addEventListener('click', e => renderDetails(e.target.id));
 
 function renderDetails(id){
     const selected = ramenData.find(r => r.id === parseInt(id));
-
+    activeId = selected.id;
     detailImg.src = selected.image;
     detailName.textContent = selected.name;
     detailRestaurant.textContent = selected.restaurant;
@@ -74,24 +78,54 @@ function addNewRamen(e){
         body: JSON.stringify(newRamenObj)
     })
     .then(res => res.json())
-    .then(data => ramenData = data);
-
-    //ramenData.push(newRamenObj);
-    addRamen(newRamenObj);
-    console.log(newRamenObj);
+    .then(data => {
+        ramenData.push(data); 
+        addRamen(data);
+    });
+    
+    
 }
 
-{/* <form id="new-ramen">
-    <h4>Add New Ramen</h4>
-    <label for="name">Name: </label>
-    <input type="text" name="name" id="new-name" />
-    <label for="restaurant">Restaurant: </label>
-    <input type="text" name="restaurant" id="new-restaurant" />
-    <label for="image">Image: </label>
-    <input type="text" name="image" id="new-image" />
-    <label for="rating">Rating: </label>
-    <input type="number" name="rating" id="new-rating" />
-    <label for="new-comment">Comment: </label>
-    <textarea name="new-comment" id="new-comment"></textarea>
-    <input type="submit" value="Create" />
-  </form> */}
+const editForm = document.querySelector('#edit-ramen');
+editForm.addEventListener('submit', e => editRamen(e));
+
+function editRamen(e){
+    e.preventDefault();
+    fetch(`http://localhost:3000/ramens/${activeId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            "rating": e.target.rating.value,
+            "comment": e.target['new-comment'].value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        //console.log(data)
+        ramenData[activeId-1].rating = data.rating;
+        ramenData[activeId-1].comment = data.comment;
+        renderDetails(activeId);
+    });
+}
+
+document.querySelector('#delete').addEventListener('click', deleteRamen);
+
+function deleteRamen(){
+    fetch(`http://localhost:3000/ramens/${activeId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(obj => {
+        ramenMenu.innerHTML = "";
+        detailTrigger = true;
+        fetchRamen();
+    });
+    
+}
